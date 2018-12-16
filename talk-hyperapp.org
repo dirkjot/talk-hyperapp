@@ -2,4 +2,33 @@
 
 ** What is HyperApp?
 
+- Simple JavaScript framework with state and pure functional
+  components
+- Less boilerplate, more convention
+- 10k javascript source code, 1k zipped
 
+
+** h aka createElement
+
+- Creates a virtual dom node
+: {
+:   name: "div",
+:   props: {
+:     class: "main"
+:   },
+:   children: ["Hello World"]
+: }
+
+- Example: 
+: const node = h("div", { class: "main" }, "Hello World")
+- To support JSX, the virtual node builder needs to deal with: 
+  - Functional components
+  - Variadic children arguments
+  - Nested children arrays
+  - Conditional rendering
+
+
+** Resources
+
+- How to use local state in hyperapp (make a nested app). 
+  https://zaceno.github.io/hypercraft/post/stateful-components/

@@ -1,29 +1,52 @@
+// HYPER APP SOURCE CODE
+//
+// Taken from GitHub repo on Dec 16, 2018
+// Original commit sha:  61addd8d1ce1436b8c8d601e010cfb89dbd3eae2
+//
+// This version of the source code has been slightly modified and comments
+// have been added. 
+
+
+// Main function to create virtual dom element
+//
+// const node = h("div", { class: "main" }, "Hello World")
+//
 export function h(name, attributes) {
   var rest = []
   var children = []
   var length = arguments.length
 
-  while (length-- > 2) rest.push(arguments[length])
+  while (length-- > 2) {
+    // extra arguments are potential children 
+    rest.push(arguments[length]) }
 
   while (rest.length) {
+    // loop over rest args (potential children)
     var node = rest.pop()
     if (node && node.pop) {
+      // JSX: if child arg is array, push its children in reverse order to `rest`
       for (length = node.length; length--; ) {
         rest.push(node[length])
       }
     } else if (node != null && node !== true && node !== false) {
+      // if node is an element, add child 
+      // JSX: exclude booleans so you can do:  hideButton || h("button")
       children.push(node)
     }
   }
 
-  return typeof name === "function"
-    ? name(attributes || {}, children)
-    : {
+    if (typeof name === "function") {
+      // if h was called with a function, execute it
+        return name(attributes || {}, children) }
+    else {
+      // return vdom node
+        return {
         nodeName: name,
         attributes: attributes || {},
         children: children,
         key: attributes && attributes.key
-      }
+        }
+    }
 }
 
 export function app(state, actions, view, container) {
