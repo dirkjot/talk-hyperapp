@@ -335,7 +335,7 @@ export function app(state, actions, view, container) {
   }
 
   function updateElement(element, oldAttributes, attributes, isSvg) {
-    console.log("updateElement", element, attributes)
+    // console.log("updateElement", element, attributes)
     for (var name in clone(oldAttributes, attributes)) {
       if (
         attributes[name] !==
@@ -406,7 +406,9 @@ export function app(state, actions, view, container) {
   //  and node is 'resolveNode(view)'
   // 
   function patch(parent, element, oldNode, node, isSvg) {
-    console.log("patch", element, node)
+    if (node === oldNode) { return element }  // disable logging for identity
+    console.log("patch!", element, node)
+    
     if (node === oldNode) {
       // do nothing if no changes
     } else if (oldNode == null || oldNode.nodeName !== node.nodeName) {
@@ -438,7 +440,7 @@ export function app(state, actions, view, container) {
       var oldChildren = oldNode.children
       var children = node.children
       
-      // 2. recursively copy old keys from children
+      // 2. recursively copy old keyed children
       for (var i = 0; i < oldChildren.length; i++) {
         oldElements[i] = element.childNodes[i]
 
@@ -447,6 +449,8 @@ export function app(state, actions, view, container) {
           oldKeyed[oldKey] = [oldElements[i], oldChildren[i]]
         }
       }
+      
+      // console.log('keys', oldKeyed)
 
       var i = 0
       var k = 0
