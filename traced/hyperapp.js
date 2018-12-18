@@ -61,6 +61,7 @@ export function h(name, attributes) {
 // - container in current page to attach view to
 //
 export function app(state, actions, view, container) {
+  console.log("Hyper app initializing")
   var map = [].map
   var rootElement = (container && container.children[0]) || null
   var oldNode = rootElement && recycleElement(rootElement)
@@ -106,6 +107,7 @@ export function app(state, actions, view, container) {
   }
 
   function render() {
+    console.log("Render called")
     skipRender = !skipRender
 
     var node = resolveNode(view)
@@ -148,6 +150,7 @@ export function app(state, actions, view, container) {
   //    globalState = setPartialState(path,  clone(state, result),  globalState)
   // 
   function setPartialState(path, value, source) {
+    console.log('setPartialState', path, value, source)
     var target = {}
     if (path.length) {
       target[path[0]] =
@@ -295,6 +298,7 @@ export function app(state, actions, view, container) {
   }
 
   function createElement(node, isSvg) {
+    console.log('createElement', node)
     var element =
       typeof node === "string" || typeof node === "number"
         ? document.createTextNode(node)
@@ -331,6 +335,7 @@ export function app(state, actions, view, container) {
   }
 
   function updateElement(element, oldAttributes, attributes, isSvg) {
+    console.log("updateElement", element, attributes)
     for (var name in clone(oldAttributes, attributes)) {
       if (
         attributes[name] !==
@@ -371,6 +376,7 @@ export function app(state, actions, view, container) {
   }
 
   function removeElement(parent, element, node) {
+    console.log("removeElement", element, node)
     function done() {
       parent.removeChild(removeChildren(element, node))
     }
@@ -400,6 +406,7 @@ export function app(state, actions, view, container) {
   //  and node is 'resolveNode(view)'
   // 
   function patch(parent, element, oldNode, node, isSvg) {
+    console.log("patch", element, node)
     if (node === oldNode) {
       // do nothing if no changes
     } else if (oldNode == null || oldNode.nodeName !== node.nodeName) {

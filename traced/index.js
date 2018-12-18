@@ -1,4 +1,4 @@
-import { h, app } from "hyperapp"
+import { h, app } from "./hyperapp"
 
 app(
   // state
