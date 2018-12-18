@@ -7,6 +7,14 @@
 - Less boilerplate, more convention
 - 10k javascript source code, 1k zipped
 
+** Main difference with React
+
+# TODO rename
+- no action objects 
+- no local state by default
+- built in asynchronous actions
+  - must call a sync action to update view
+- 
 
 ** h aka createElement
 
@@ -27,8 +35,171 @@
   - Nested children arrays
   - Conditional rendering
 
+** JSX details: Nested children arrays
+
+#+BEGIN_SRC javascript
+h("div", { "class": "superb"} , "hello pivotal", ["it is nice to see you", "today"])
+
+RESULT
+{ nodeName: 'div',
+  attributes: { class: 'superb' },
+  children: [ 'hello pivotal', 'it is nice to see you', 'today' ],
+  key: undefined }
+#+END_SRC
+
+** JSX details: a function instead of a name
+
+#+BEGIN_SRC javascript
+h((attributes, children) =>  h("span", attributes, children), 
+  { "class": "superb"} , 
+  ["it is nice to see you", "today"] )
+
+RESULT:
+{ nodeName: 'span',
+  attributes: { class: 'superb' },
+  children: [ 'it is nice to see you', 'today' ],
+  key: undefined }
+
+
+#+END_SRC
+
+** JSX Details: A function (2)
+
+Why do we want this? Because of components!
+
+#+BEGIN_SRC 
+const Button = props => <button class="main">{props.title}</button>
+const node = <Button title="Hello World" />
+#+END_SRC
+
+Babel will compile this to:
+#+BEGIN_SRC javascript
+const Button = props => h("button", { class: "main" }, props.title)
+const node = h(Button, { title: "Hello World" })
+#+END_SRC
+
+**  JSX Details: A function (3)
+
+If you add the following to your '.babelrc':
+#+BEGIN_SRC 
+  "plugins": [
+     ["@babel/transform-react-jsx", { "pragma": "h" }],
+  ]
+#+END_SRC
+
+You can use inline jsx in your 'babel-node' live command line:
+#+BEGIN_SRC 
+> const Button = props => <button class="main">{props.title}</button>
+> Button
+[Function: Button]
+> Button.toString()
+'function Button(props) { 
+  return h("button", {
+    class: "main"
+  }, props.title);
+}'
+> 
+
+#+END_SRC
+
+** App: oldNode and container replacement
+
+The view that HyperApp is going to produce will have to be attached to
+the real dom.  Here we create a virtual dom equivalent of that current
+dom node, recursively copying any 'text' elements that current dom
+node may have. 
+
+
+
+We use 'recycleElement' to do the recursive copying. It is used only
+here.
+
+From README.md:
+#+BEGIN_QUOTE
+Hyperapp will also attempt to reuse existing elements inside the
+container enabling SEO optimization and improving your sites
+time-to-interactive. The process consists of serving a fully rendered
+page together with your application. Then instead of throwing away the
+existing content, we'll turn your DOM nodes into an interactive
+application out of the box.
+#+END_QUOTE
+
+
+# TODO get working example??
+
+** scheduleRender
+
+Run the renderer at the earlier opportunity, in a separate
+thread. Uses 'skipRender' to avoid scheduling the renderer more than
+once:  
+- Once we schedule a render, set skipRender to true
+- If skipRender is truthy, scheduleRender will be a no-op. 
+
+** render
+
+- Toggle 'skipRender'
+- Materialize our view by executing all nodes that are functions and
+  removing null nodes (function 'resolveNode')
+- patch the designated root element by adding  our view to it
+# TODO confirm that we add here
+- set 'isRecyling' to false: Recycling=true for the very pass of the
+  renderer, when we try to re-use existing dom elements.
+- run all lifecycle hooks 
+
+** Lifecycle hooks
+
+
+  - every time we run 'updateElement', this function will add itself
+    back to the lifecycle methods
+  - if the user adds an 'oncreate' attribute to a new node, it will be
+    added to the lifecycle hook array
+  - Available lifecycle hooks: oncreate, onupdate, onremove, ondestroy
+
+
+
+** Wire State to Actions
+
+- Store = (global) state
+- This function will make your actions work on the store. 
+- Actions can be namespaced, as in the example
+- Actions can return a value, in which case the store gets updated
+- Or they can return a function with arguments (store, actions), in
+  which case the result of that function is the new value for store.
+- 
+
+
 
 ** Resources
 
 - How to use local state in hyperapp (make a nested app). 
   https://zaceno.github.io/hypercraft/post/stateful-components/
+- Reasonable looking starter (did not try)
+  https://github.com/selfup/hyperapp-one
+- What go me started: "I abandonded React in favor of HyperApp, here's
+  why'
+  https://hackernoon.com/i-abandonded-react-in-favor-of-hyperapp-heres-why-df65638f8a79
+
+
+* open q
+
+** isrecycling
+
+- only set on first render?? if so why this name?
+- evidence: 
+    var cb = isRecycling ? attributes.oncreate : attributes.onupdate
+
+** skipRender
+
+- Only set in render and scheduleRender
+- starts at undefined = false
+
+- current state of skipRendering, the first line in render flips it
+
+
+** scheduleRender
+
+- one initial call in app
+- called inside wireStateToActions
+- how does it keep running?  <- we only need a render when an action
+  is taken, right??
+- 

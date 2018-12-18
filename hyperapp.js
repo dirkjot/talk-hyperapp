@@ -7,9 +7,10 @@
 // have been added. 
 
 
-// Main function to create virtual dom element
+// h - Main function to create virtual dom element
 //
-// const node = h("div", { class: "main" }, "Hello World")
+// example:
+//   const node = h("div", { class: "main" }, "Hello World")
 //
 export function h(name, attributes) {
   var rest = []
@@ -18,14 +19,15 @@ export function h(name, attributes) {
 
   while (length-- > 2) {
     // extra arguments are potential children 
-    rest.push(arguments[length]) }
+    rest.push(arguments[length])
+  }
 
   while (rest.length) {
     // loop over rest args (potential children)
     var node = rest.pop()
     if (node && node.pop) {
-      // JSX: if child arg is array, push its children in reverse order to `rest`
-      for (length = node.length; length--; ) {
+      // JSX: if child arg is array, push its children to `rest`
+      for (length = node.length; length--;) {
         rest.push(node[length])
       }
     } else if (node != null && node !== true && node !== false) {
@@ -35,20 +37,29 @@ export function h(name, attributes) {
     }
   }
 
-    if (typeof name === "function") {
-      // if h was called with a function, execute it
-        return name(attributes || {}, children) }
-    else {
-      // return vdom node
-        return {
-        nodeName: name,
-        attributes: attributes || {},
-        children: children,
-        key: attributes && attributes.key
-        }
+  if (typeof name === "function") {
+    // if h was called with a function, execute it
+    return name(attributes || {}, children)
+  }
+  else {
+    // return vdom node
+    return {
+      nodeName: name,
+      attributes: attributes || {},
+      children: children,
+      key: attributes && attributes.key
     }
+  }
 }
 
+// app - MAIN function to create a hyperapp
+// 
+// arguments:
+// - initial state 
+// - map of actions
+// - html view to return
+// - container in current page to attach view to
+//
 export function app(state, actions, view, container) {
   var map = [].map
   var rootElement = (container && container.children[0]) || null
@@ -63,11 +74,16 @@ export function app(state, actions, view, container) {
 
   return wiredActions
 
+  // recycleElement - create vdom node for actual element 
+  // creates a vdom node which has a recursive copy of all text nodes under this element
+  // 
+  // Used to replace container in current page with hyperapp view
+  //
   function recycleElement(element) {
     return {
       nodeName: element.nodeName.toLowerCase(),
       attributes: {},
-      children: map.call(element.childNodes, function(element) {
+      children: map.call(element.childNodes, function (element) {
         return element.nodeType === 3 // Node.TEXT_NODE
           ? element.nodeValue
           : recycleElement(element)
@@ -75,6 +91,12 @@ export function app(state, actions, view, container) {
     }
   }
 
+
+  // resolveNode - resolve all pending actions and remove empty branches
+  // 
+  // Recursively traverse node, replacing all functions with their results 
+  // and all null nodes with empty string ("")
+  // 
   function resolveNode(node) {
     return typeof node === "function"
       ? resolveNode(node(globalState, wiredActions))
@@ -97,6 +119,7 @@ export function app(state, actions, view, container) {
     while (lifecycle.length) lifecycle.pop()()
   }
 
+  // scheduleRender - schedule a render pass if not already scheduled
   function scheduleRender() {
     if (!skipRender) {
       skipRender = true
@@ -104,6 +127,9 @@ export function app(state, actions, view, container) {
     }
   }
 
+  // clone - create new js object from target and source
+  // similar to Object.asign
+  //
   function clone(target, source) {
     var out = {}
 
@@ -113,6 +139,14 @@ export function app(state, actions, view, container) {
     return out
   }
 
+  // setPartialState - Create updated copy of store with old values as defaults
+  // 
+  // Return an updated copy of store (state) after making update on path
+  // take old values from source if new value does not supply them.
+  // 
+  // Only application in wireStatetoActions: 
+  //    globalState = setPartialState(path,  clone(state, result),  globalState)
+  // 
   function setPartialState(path, value, source) {
     var target = {}
     if (path.length) {
@@ -125,6 +159,7 @@ export function app(state, actions, view, container) {
     return value
   }
 
+  // get namespaced part of store
   function getPartialState(path, source) {
     var i = 0
     while (i < path.length) {
@@ -133,48 +168,70 @@ export function app(state, actions, view, container) {
     return source
   }
 
+  // wireStateToActions - prepare actions for store
+  //
+  // Example:
+  //    const actions = {
+  //      counter: {
+  //        down: value => state => ({ count: state.count - value }),
+  //        up: value => state => ({ count: state.count + value })
+  //      }
+  //    }
+  //
+  // from app:
+  //    var wiredActions = wireStateToActions([], globalState, clone(actions))
+
   function wireStateToActions(path, state, actions) {
     for (var key in actions) {
-      typeof actions[key] === "function"
-        ? (function(key, action) {
-            actions[key] = function(data) {
-              var result = action(data)
+      if (typeof actions[key] === "function") {
+        // uses anonymous function + argument to simplify the loop 
+        (function (key, action) {
+          actions[key] = function (data) {
+            var result = action(data)
 
-              if (typeof result === "function") {
-                result = result(getPartialState(path, globalState), actions)
-              }
-
-              if (
-                result &&
-                result !== (state = getPartialState(path, globalState)) &&
-                !result.then // !isPromise
-              ) {
-                scheduleRender(
-                  (globalState = setPartialState(
-                    path,
-                    clone(state, result),
-                    globalState
-                  ))
-                )
-              }
-
-              return result
+            if (typeof result === "function") {
+              // if executing the action returns a function, execute it with local state and actions as params
+              result = result(getPartialState(path, globalState), actions)
             }
-          })(key, actions[key])
-        : wireStateToActions(
-            path.concat(key),
-            (state[key] = clone(state[key])),
-            (actions[key] = clone(actions[key]))
-          )
+            // if we have a delta, schedule a render and update 'globalState' var
+            if (
+              result &&
+              result !== (state = getPartialState(path, globalState)) &&
+              !result.then // !isPromise
+            ) {
+              // update global state with the union of our action's result and the original local state, 
+              // use the old globalState as a fallback for any unspecified keys and paths
+              scheduleRender(
+                (globalState = setPartialState(
+                  path,
+                  clone(state, result),
+                  globalState
+                ))
+              )
+            }
+            return result
+          }
+        })(key, actions[key])
+      } else {
+        // we have a namespace part: recurse
+        wireStateToActions(
+          path.concat(key),
+          (state[key] = clone(state[key])),
+          (actions[key] = clone(actions[key]))
+        )
+      }
     }
-
     return actions
   }
 
+  // helper function for keyed dom elements, returns the key or null if node 
+  // does not exist
   function getKey(node) {
     return node ? node.key : null
   }
 
+  // helper function for event listening:  use the 'events' map on the element 
+  // to run the right listener, with the invoked event as its argument
   function eventListener(event) {
     return event.currentTarget.events[event.type](event)
   }
@@ -197,6 +254,7 @@ export function app(state, actions, view, container) {
       }
     } else {
       if (name[0] === "o" && name[1] === "n") {
+        // event listener, starts with 'on'
         name = name.slice(2)
 
         if (element.events) {
@@ -215,6 +273,7 @@ export function app(state, actions, view, container) {
           element.removeEventListener(name, eventListener)
         }
       } else if (
+        // existing attribute, not special
         name in element &&
         name !== "list" &&
         name !== "type" &&
@@ -225,6 +284,7 @@ export function app(state, actions, view, container) {
       ) {
         element[name] = value == null ? "" : value
       } else if (value != null && value !== false) {
+        // otherwise
         element.setAttribute(name, value)
       }
 
@@ -240,15 +300,15 @@ export function app(state, actions, view, container) {
         ? document.createTextNode(node)
         : (isSvg = isSvg || node.nodeName === "svg")
           ? document.createElementNS(
-              "http://www.w3.org/2000/svg",
-              node.nodeName
-            )
+            "http://www.w3.org/2000/svg",
+            node.nodeName
+          )
           : document.createElement(node.nodeName)
 
     var attributes = node.attributes
     if (attributes) {
       if (attributes.oncreate) {
-        lifecycle.push(function() {
+        lifecycle.push(function () {
           attributes.oncreate(element)
         })
       }
@@ -290,7 +350,7 @@ export function app(state, actions, view, container) {
 
     var cb = isRecycling ? attributes.oncreate : attributes.onupdate
     if (cb) {
-      lifecycle.push(function() {
+      lifecycle.push(function () {
         cb(element, oldAttributes)
       })
     }
@@ -323,9 +383,27 @@ export function app(state, actions, view, container) {
     }
   }
 
+
+  // patch -- change the actual dom to reflect our vdom
+  // only called from render and recursively
+  // 
+  // args: 
+  // - parent: element to attach view to
+  // - rootElement: top level vdom
+  // - oldNode:  vdom element to be updated
+  // - node: replacement vdom element
+  // - flag to signal SVG element
+  // 
+  // call from render:
+  //    rootElement = patch(container, rootElement, oldNode, node, false)  
+  // In render, oldNode is 'recycleElement(container)', 
+  //  and node is 'resolveNode(view)'
+  // 
   function patch(parent, element, oldNode, node, isSvg) {
     if (node === oldNode) {
+      // do nothing if no changes
     } else if (oldNode == null || oldNode.nodeName !== node.nodeName) {
+      // new node introduced (first render?) or node type changed
       var newElement = createElement(node, isSvg)
       parent.insertBefore(newElement, element)
 
@@ -335,8 +413,11 @@ export function app(state, actions, view, container) {
 
       element = newElement
     } else if (oldNode.nodeName == null) {
+      // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeValue
       element.nodeValue = node
     } else {
+      // the heart of patch, 
+      // 1. update the element
       updateElement(
         element,
         oldNode.attributes,
@@ -349,7 +430,8 @@ export function app(state, actions, view, container) {
       var oldElements = []
       var oldChildren = oldNode.children
       var children = node.children
-
+      
+      // 2. recursively copy old keys from children
       for (var i = 0; i < oldChildren.length; i++) {
         oldElements[i] = element.childNodes[i]
 
@@ -420,7 +502,9 @@ export function app(state, actions, view, container) {
           removeElement(element, oldKeyed[i][0], oldKeyed[i][1])
         }
       }
+      // end of heart of patch
     }
+    // patch returns the updated element
     return element
   }
 }
