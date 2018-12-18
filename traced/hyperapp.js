@@ -107,7 +107,7 @@ export function app(state, actions, view, container) {
   }
 
   function render() {
-    console.log("Render called")
+    console.log("Render called, lifecycle:", lifecycle)
     skipRender = !skipRender
 
     var node = resolveNode(view)
@@ -406,12 +406,10 @@ export function app(state, actions, view, container) {
   //  and node is 'resolveNode(view)'
   // 
   function patch(parent, element, oldNode, node, isSvg) {
-    if (node === oldNode) { return element }  // disable logging for identity
-    console.log("patch!", element, node)
-    
     if (node === oldNode) {
       // do nothing if no changes
     } else if (oldNode == null || oldNode.nodeName !== node.nodeName) {
+      console.log("patch - new", element, node)
       // new node introduced (first render?) or node type changed
       var newElement = createElement(node, isSvg)
       parent.insertBefore(newElement, element)
@@ -422,11 +420,13 @@ export function app(state, actions, view, container) {
 
       element = newElement
     } else if (oldNode.nodeName == null) {
+      console.log("patch - nodevalue", element, node)
       // https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeValue
       element.nodeValue = node
     } else {
       // the heart of patch, 
       // 1. update the element
+      console.log("patch - update", element, node)
       updateElement(
         element,
         oldNode.attributes,

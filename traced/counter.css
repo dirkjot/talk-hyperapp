@@ -20,6 +20,7 @@ body {
   }
   button {
     background: #111;
+    width: 80px;
     border-radius: 0px;
     border: 1px solid #00caff;
     color: inherit;
@@ -32,8 +33,7 @@ body {
     transition: background .2s;
   }
   button:hover,
-  button:active,
-  button:disabled {
+  button:active {
     background: #00caff;
     color: #111;
   }
@@ -46,3 +46,5 @@ body {
   button + button {
     margin-left: 3px;
   }
+  button,
+  button:disabled
