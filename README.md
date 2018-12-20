@@ -5,6 +5,7 @@ Tech talk about how Javascript frameworks work, using
 
 Dirk P. Janssen, Dec 2018
 
+![demo 3 screenshot](./hyperapp-demo-3.png)
 
 ## In this repo
 - org-mode file with talk slides (talk-hyperapp.org)
