@@ -1,5 +1,30 @@
 import { h, app } from "./hyperapp"
 
+
+
+// DEMO 1: A simple app with JSX
+// app( // state, actions, view, container
+//   { message: 'Hi'},
+//   {},
+//   (state, actions) => (<h1>{state.message} Audience</h1>),
+//   document.getElementById('target')
+// )
+
+
+// DEMO 2: Same app using 'h'
+// app(
+//   { message: 'Hi'},
+//   {},
+//   function (state, actions) { return  h("h1", {}, state.message, " Audience")},
+//   document.getElementById('target')
+// )
+
+
+
+
+
+// DEMO 3: Counters
+
 const CounterComponent = ({counterName })   => (state, actions) => {
     return (
       <div name={counterName}>

@@ -9,12 +9,30 @@
 
 ** Main difference with React
 
-# TODO rename
+
 - no action objects 
 - no local state by default
 - built in asynchronous actions
-  - must call a sync action to update view
-- 
+
+** Virtual Dom
+
+Simple idea: 
+- instead of manipulating actual dom nodes (slow)
+- we use a light-weight js representation
+  - node name (h1)
+  - attributes (class=header)
+  - children (The Title)
+
+** Virtual dom rendering
+
+First render:
+- create a dom node (element) for each vdom node
+
+Further renders:
+- compare old vdom and new vdom
+- if different, update matching dom node (element)
+- 'matching'...
+
 
 ** h aka createElement
 
@@ -78,7 +96,7 @@ const Button = props => h("button", { class: "main" }, props.title)
 const node = h(Button, { title: "Hello World" })
 #+END_SRC
 
-**  JSX Details: A function (3)
+** JSX Details: A function (3)
 
 If you add the following to your '.babelrc':
 #+BEGIN_SRC 
@@ -156,7 +174,6 @@ once:
   - Available lifecycle hooks: oncreate, onupdate, onremove, ondestroy
 
 
-
 ** Wire State to Actions
 
 - Store = (global) state
@@ -165,9 +182,46 @@ once:
 - Actions can return a value, in which case the store gets updated
 - Or they can return a function with arguments (store, actions), in
   which case the result of that function is the new value for store.
-- 
 
+** Example App - Walkthrough
 
+- See 'traced' directory
+- Working setup with jsx/babel/webpack
+- Commented hyperapp.js file with 
+  some console.logs in their
+- Very simple app: Counter example, but
+  with components.
+- [Switch between demos by commenting in/out]
+
+** Demo 1
+- Simple app using jsx
+- No clickable elements, no actions
+- Simple state and one state insertion
+- Inserted in dom after '#target'
+
+** Demo 2
+- Same thing after JSX conversion
+- Draw vdom node tree
+- Let's look at hyperapp's events in console log
+  - Patch: to insert dom nonde
+  - create DOM elements for each vdom node
+
+** Demo 3
+- Using a counter, with simple up/down actions
+- Fancy 1: Counter is a component, so we can have two
+- Fancy 2: Counter is named, see ugly state update
+- Fancy 3: Counters don't go below 0
+- [Comment out the 'minutes' counter now]
+
+** Hyper app tracing
+- App startup console logs: app is created and attached to DOM
+- Click button: See that only counter is updated
+- Patch does a two diff between old and new vdom, updates 
+  DOM elements accordingly
+- Actions have been wired to run render ('wireStateToActions')
+ 
+
+** Thank you
 
 ** Resources
 
@@ -180,26 +234,3 @@ once:
   https://hackernoon.com/i-abandonded-react-in-favor-of-hyperapp-heres-why-df65638f8a79
 
 
-* open q
-
-** isrecycling
-
-- only set on first render?? if so why this name?
-- evidence: 
-    var cb = isRecycling ? attributes.oncreate : attributes.onupdate
-
-** skipRender
-
-- Only set in render and scheduleRender
-- starts at undefined = false
-
-- current state of skipRendering, the first line in render flips it
-
-
-** scheduleRender
-
-- one initial call in app
-- called inside wireStateToActions
-- how does it keep running?  <- we only need a render when an action
-  is taken, right??
-- 
